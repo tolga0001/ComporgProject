@@ -1,0 +1,170 @@
+#f(x) = a* f(x-1) + b * f(x-2) – 2,
+#prompt user to take a and b inputs
+#read a and b inputs
+#prompt user to take first two function values
+#take two inputs x0 and x1
+#prompt user to take n
+#calculate nth term and print the result
+
+	.data
+prmpt1: .asciiz "Please enter the coefficients: "
+prmpt2: .asciiz "Please enter  two numbers of the sequence: "
+prmpt3  : .asciiz "Enter the number you want to calculate (it must be greater than 1): "
+output  : .asciiz "th element of the sequence is "
+errMessage  : .asciiz "The numbers should be seperated by blank!!\n"
+buffer: .space 256  # Allocate space to store the string
+         .text  ## starting of code area
+main:
+      #print first prompt 
+      li $v0, 4
+      la $a0,prmpt1
+      syscall
+      
+      #print first read (a b)
+      li $v0, 8
+      la $a0,buffer
+      li $a1, 256
+      syscall
+      li  $s0,'0'
+      li $s1, 32
+      
+      lb $t0, 0($a0)
+      subi $t0,$t0,'0'
+      li $s4, 10 
+      addi $a0,$a0,1
+      
+      loop1:            #a0(until first space)
+      lb  $s3, 0($a0)
+      beq $s3,$s1,advanceSpaces
+      beq $s3,$s4,error
+      sub $s3,$s3,$s0
+      mul $t0,$t0,$s4
+      add $t0,$t0,$s3
+      addi $a0,$a0,1
+      j loop1
+  ##  ---------------------------
+      
+     advanceSpaces:
+      lb , $s3, 0($a0)
+      bne , $s3,$s1,next1
+      addi, $a0,$a0,1 
+      j advanceSpaces
+      
+      next1:
+      lb  $t1, 0($a0)
+      subi $t1,$t1,'0'
+      addi, $a0,$a0,1
+  ##-----------------------------------
+      afterSpace1:   #a1(after first space)
+      lb  $s3, 0($a0)
+      beq $s3,$s4,exitloop ## s4 newline ı tutuyor
+      sub $s3,$s3,$s0
+      mul $t1,$t1,$s4
+      add $t1,$t1,$s3
+      addi $a0,$a0,1
+      j afterSpace1
+ #---------------------------------------------          
+      exitloop:
+      
+        #print second prompt 
+      li $v0, 4
+      la $a0,prmpt2
+      syscall
+      
+      #print second read (x0 x1)
+      li $v0, 8
+      la $a0,buffer
+      li $a1, 256
+      syscall
+      
+      li $s1, 32
+      lb $t2, 0($a0)
+       subi $t2,$t2,'0'
+       addi $a0,$a0,1
+      
+      loop2: #t2 until first space
+      lb  $s3, 0($a0)
+      beq $s3,$s1,advanceSpaces2
+      beq $s3,$s4,error
+      sub $s3,$s3,$s0
+      mul $t2,$t2,$s4
+      add $t2,$t2,$s3
+      addi $a0,$a0,1
+      j loop2
+      ##------------------------
+     
+     
+      
+      advanceSpaces2:
+      lb  $t3, 0($a0)
+      bne  $t3,$s1,next2
+      addi $a0,$a0,1
+      j advanceSpaces2
+      
+      next2:
+      lb $t3, 0($a0)
+      subi $t3,$t3,'0'
+      addi, $a0,$a0,1
+      
+     #--------------------------------- 
+      afterSpace2:                          
+      lb  $s3, 0($a0)
+      beq $s3,$s4,exitloop1
+      sub $s3,$s3,$s0
+      mul $t3,$t3,$s4
+      add $t3,$t3,$s3
+      addi $a0,$a0,1
+    
+      exitloop1:  
+       
+       #print third prompt
+      li $v0, 4
+      la $a0,prmpt3
+      syscall
+      
+      #take input for n
+      li $v0, 5
+      syscall
+      move $t4,$v0
+      
+      #i =0 i<n-2
+      li $a0, 0 ## i=0
+      loop:
+      subi $t5, $t4, 2 
+      bgeu $a0,$t5,exitloop2 # if i>=n-2 exit the loop
+      mul $v1,$t0,$t3  # v1 = a*f(x-1)
+      mul $t6,$t1,$t2  # t6 = b*f(x-2)
+      add $v1,$v1,$t6  # v1= a*f(x-1)+b*f(x-2)
+      addi $v1,$v1,-2  # v1= a*f(x-1)+b*f(x-2)-2
+      move $t2,$t3 #x0=x1
+      move $t3,$v1 #x1=function_res(v0)
+      addi $a0,$a0,1 # i = i+1
+      j loop
+      
+      error:
+      li $v0,4
+      la $a0, errMessage
+      syscall
+      j main
+      
+      exitloop2:
+     #print n first
+      li $v0,1
+      move $a0,$t4
+      syscall
+      
+      #print output prompt
+      li $v0,4
+      la $a0, output
+      syscall
+      
+      #print result
+       li $v0,1
+      move $a0,$v1
+      syscall
+      
+      exit:
+      li $v0,10
+      syscall
+   
+   # end of main  
