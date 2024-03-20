@@ -1,0 +1,202 @@
+	.data
+prompt:	.asciiz "Enter the array elements one by one and hit enter, enter -1 to finish array:\n"
+check: .asciiz "Are these coprime?\n"
+index_str: .asciiz "i: "
+confirmation: .asciiz "The array entered is: "
+newline_char: .asciiz "\n"
+space_char: .asciiz " "
+array:	.word 128					#Reserve 64 integers for array
+	.text 
+main:							#t1-->&array s2-->array_size
+	
+	#Print prompt
+	li $v0, 4					#Print prompt
+	la $a0, prompt					#Put prompt into a0 for printing
+	syscall						#Syscall for print
+
+	jal input_loop					#Get input and initialize array here
+	
+	jal array_loop
+	
+	output_loop:
+		beq $s2, $zero programme_end
+		li $v0, 1
+		lw $a0, ($t1)
+		syscall
+		
+		li $v0, 4
+		la $a0, space_char
+		syscall
+		
+		addi $t1, $t1, 4
+		sub $s2, $s2, 1
+		
+		j output_loop
+	
+	#End programme here
+	programme_end:
+		li $v0, 10				#Exit the programme
+		syscall					#Syscall for exit
+	
+adjust_array_elements:					#t4-->i, t5-->i+1, t6-->temp value
+
+	add $t4, $t1, $s3				#Indexing for the array element here, -->[i]
+	lw $t8, ($t4) 					#Calculate LCM
+	lw $t9, 4($t4)
+	mul $t8, $t8, $t9
+	div $t8, $t8, $v1
+	
+	
+	array_adjust_loop:
+		sub $t6, $t4, $t1
+		div $t6, $t6, 4
+		bge $t6, $s2 array_adjust_end
+		
+		lw $t5, 4($t4)				#[i+1]-->t5
+		sw $t5, ($t4)				#t5-->[i]
+		
+		addi $t4, $t4, 4			#i++
+		j array_adjust_loop
+		
+	array_adjust_end:
+		add $t4, $t1, $s3
+		sw $t8, ($t4)					#Store lowest common factor here
+		sub $s2, $s2, 1
+		move $t8, $zero
+		move $t9, $zero
+		#move $s3, $zero
+		jr $ra
+		
+
+array_loop:						#t2-->First Element, t3-->Second Element, s3-->4*index
+
+	addi $sp, $sp, -4      				# adjust stack for another item
+    	sw   $s3, 0($sp)       				# save $s0
+    	add  $s3, $zero, $zero 				# i = 0
+    	
+    	
+    	array_loop_body:
+    		div $t2, $s3, 4				#Adjust index checking for array size
+    		addi $t2, $t2, 1			#Decrement for the last element
+		beq $t2, $s2, array_loop_end
+		
+		move $t7, $ra
+		la $t1, array				#Load arrays address into t1
+		
+		add $t4, $t1, $s3			#Indexing for the array element here
+		lw $t2, ($t4)				#First element of array
+		lw $t3, 4($t4)				#Second element of array
+	
+		jal coprime_check			#Check two numbers if coprime
+		
+		beq $v1, 1 array_loop_print
+		
+		jal adjust_array_elements
+		
+		move $s3, $zero
+		
+		j array_skip
+		
+		array_loop_print:
+		
+			addi $s3, $s3, 4
+			
+			array_skip:
+			
+    			move $ra, $t7				#Fix return pointer
+    			move $t7, $zero
+    	
+    			j array_loop_body
+    	
+    	array_loop_end:
+    		#lw   $s3, 0($sp)			#Restore s3
+    		jr $ra	
+    		    	
+    	print_check:
+		#li $v0, 4			
+    		#la $a0, confirmation_coprime 		
+    		#syscall	
+	 
+#Checks if two numbers are coprime			t2-->num1, t3-->num2, t4-->modulus results
+coprime_check:
+	addi $sp, $sp, -4      				# adjust stack for 1 item
+    	sw   $s0, 0($sp)       				# save $s0
+    	add  $s0, $zero, $zero				# i = 1
+    	j coprime_loop
+    	
+    	coprime_loop:					#Loop for detecting coprime
+    		addi $s0, $s0, 1			#Increment i
+	
+		div $t4, $t2, $s0			#First modulus is done here
+		mfhi $t4				#Remainder into t4
+		beqz $t4 second_if_coprime		#If remainder is 0 means s0 is a factor of num1
+		ble $t2 ,$s0 coprime_end		#End loop when i is equal or greater than the number
+		ble $t3 ,$s0 coprime_end
+		j coprime_loop
+	
+	second_if_coprime:
+		div $t4, $t3, $s0			#Second modulus is done here
+		mfhi $t4				#Remainder into t4
+		beqz $t4 coprime_set_factor		#If remainder is zero means s0 is a factor of num2 and num1
+		j coprime_loop
+	
+	coprime_set_factor:
+		move $v1, $s0				#v1 has the common factor, 1 if coprime
+		j coprime_loop
+		
+	coprime_end:
+		move $s0, $zero
+		jr $ra					#Return to callee
+				
+
+input_loop:
+	addi $sp, $sp, -4      				# adjust stack for 1 item
+    	sw   $s0, 0($sp)       				# save $s0
+    	add  $s0, $zero, $zero 				# i = 0
+
+	body:
+	#Read string input here
+	li $v0, 5					#Get input in v0
+    	syscall						#Make system call for input taking
+    		
+    	la $t1, array					#Load arrays address into t1
+    	beq $v0, -1, next				#jump to end if -1 is entered
+    	
+    	add $t2, $t1, $s0				#Address of array element
+    	addi $s0, $s0, 4				#Increment array pointer by 4 for next time
+    	sw $v0, ($t2) 					#Store in array	position	
+    	
+    	j body						#Loop
+
+    	next:
+    		next_start:
+    			addi $sp, $sp, -4      		# adjust stack for another item
+    			sw   $s2, 0($sp)       		# save $s2
+    			add  $s2, $zero, $s0		# save s0 into s2 to store array siz
+    			div $s2, $s2, 4			#Divide to 4 for size
+    			#li $v0, 4			#Print str
+    			#la $a0, confirmation 		#Put confirmation str in a0
+    			#syscall				#Print syscall
+    			add $t2, $t1, $zero		#Make pointer point to start of array	
+    			j next_loop
+    		
+    		next_loop:
+    			beq $s0, 0 end
+    			li $v0, 1			#Syscall for print int
+    			
+    			lw $a0, ($t2)			#Load a0 to be printed
+    			addi $t2, $t2, 4
+    			sub $s0, $s0, 4			#Decrement pointer
+    			syscall
+    			
+    			li $v0, 4			#Str print syscall
+    			la $a0, space_char		#Load space
+    			syscall	
+    			j next_loop
+    		end:
+    			li $v0, 4			#Print newline at the end of array
+    			la $a0, newline_char
+    			syscall
+    			lw   $s0, 0($sp)		#Restore s0
+    			jr $ra				#Return to callee
+	
