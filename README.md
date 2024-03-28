@@ -1,14 +1,14 @@
-#CSE3038 PROJECT 1
+# CSE3038 PROJECT 1
 
-Project for COMPUTER ORGANIZATION
+# Project for COMPUTER ORGANIZATION
 
-Contributors
+# Contributors
 
-Group Members
-1 150121043 Bora Duman
-2 150121051 Arda Öztürk
-3 150120076 Furkan Gökgöz
-4 150121032 Mehmet Toprak Balıkçı
+# Group Members
+1 150120022 Tolga Fehmioğlu <br>
+2 150121032 Mehmet Toprak Balıkçı <br>
+3 150121002 Enes Torluoğlu <br>
+4 150121538 Muhammed Enes Gökdeniz <br>
 
-REPORT LINK
+# REPORT LINK
 https://docs.google.com/document/d/1OiSp2QFgL8pT1b2Y6QycS69utiuoMWfq3oVw7IcCt9g/edit
