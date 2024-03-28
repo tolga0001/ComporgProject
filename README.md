@@ -1,10 +1,6 @@
 # CSE3038 PROJECT 1
 
-# Project for COMPUTER ORGANIZATION
-
-# Contributors
-
-# Group Members
+Group Members <br>
 1 150120022 Tolga Fehmioğlu <br>
 2 150121032 Mehmet Toprak Balıkçı <br>
 3 150121002 Enes Torluoğlu <br>
