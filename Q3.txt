@@ -1,0 +1,169 @@
+	.data
+inputPrompt: .asciiz "Enter the inputString: "
+shuffleNoPrompt: .asciiz "Enter the shuffleNo: "   
+input: .space 256    
+        .text  ## starting of code area
+
+main:
+## print the input prompt
+li $v0, 4
+la $a0, inputPrompt
+syscall
+
+# take the string from user
+      li $v0, 8 # trap code to read string
+      la $a0,input # give the address of input 
+      li $a1, 256 # how many bytes will store
+      syscall
+  
+ move $s0,$a0 #our string is in address $s0   
+
+# print the shuffleNo
+li $v0, 4
+la $a0, shuffleNoPrompt
+syscall
+
+
+
+#take the suffleNo from user
+li $v0,5
+syscall
+move $t0,$v0 #n is to now
+
+li $t4,0 # start index of any string 
+li $t5,10 # this is the asci code of new line and use to determine wheter reach end of line or not 
+count_length:
+    add $t3,$s0,$t4 #calculate the address of current char
+    lb $t2, 0($t3)      # Load byte from string
+    beq $t2,$t5, end_count # Exit loop if new line is encountered
+    addi $t4, $t4, 1    # Move to next character in string
+    addi $t1, $t1, 1    # Increment counter
+    j count_length      # Continue looping
+    
+ end_count:
+ sb $0 0($t3) 
+ addi $t1,$t1,-1 ## take the last index
+ #ar range the parameters 
+move $a0,$t0 # a0 =n
+li $a1,0 #a1=firstIndex
+move $a2,$t1 #a2=lastIndex
+jal shuffle ## call the function that will calculate the shuffled string
+
+#print the string 
+lastloop:
+    # Load the byte at the address in $a0
+    lb $t0, ($s0)
+    # Check if the byte is null terminator
+    beqz $t0, exit   # If it's null terminator, exit loop
+
+    # Load system call number for printing a character (4) into $v0
+    li $v0, 11
+    move $a0,$t0
+    # Execute the system call to print the character
+    syscall
+
+    # Move to the next character in the string
+    addi $s0, $s0, 1
+    # Continue loop
+    j lastloop
+
+
+exit:
+li $v0,10
+syscall
+ 
+
+
+shuffle:
+
+#check if n is less or than 0 return
+blez $a0,returnString
+#take the left part of the string
+addi $sp,$sp,-4
+sw $ra,0($sp)
+jal swapLeftRight # calling this function to swap elements of string 
+lw $ra,0($sp)
+addi $sp,$sp,4
+add $t4,$a1,$a2
+srl $t4,$t4,1 #t4=(a1+a2)/2
+
+#arrange the variables
+
+
+subi $sp,$sp,20 #allocate for n,firstIndex,lastIndex,ra
+sw $a0,0($sp) #a0=n
+sw $a1,4($sp) #a1=firstIndex
+sw $a2,8($sp) #a2=lastIndex
+sw $t4,12($sp)
+sw $ra,16($sp)
+
+addi $a0,$a0,-1 #$a0=n-1
+               #a1 is same
+move $a2,$t4 #a2=mid
+
+jal shuffle
+#restore the variables after executing recursive call
+lw $a0,0($sp) #a0=n
+lw $a1,4($sp) #a1=firstIndex
+lw $a2,8($sp) #a2=lastIndex
+lw $t4,12($sp)
+lw $ra,16($sp)
+addi $sp,$sp,20 #allocate for n,firstIndex,lastIndex,ra
+
+#store the current values to stack to call the function again
+subi $sp,$sp,20 #allocate for n,firstIndex,lastIndex,ra
+sw $a0,0($sp) #a0=n
+sw $a1,4($sp) #a1=firstIndex
+sw $a2,8($sp) #a2=lastIndex
+sw $t4,12($sp)
+sw $ra,16($sp)
+
+#arrange the variables for second half
+addi $a0,$a0,-1 #$a0=n-1
+addi $a1,$t4,1 #a1=mid+1
+#a0a2 will be same $a2=lastIndex
+#stack the variables in function parameter
+
+jal shuffle
+
+#restore the variables after executing recursive call
+lw $a0,0($sp) #a0=n
+lw $a1,4($sp) #a1=firstIndex
+lw $a2,8($sp) #a2=lastIndex
+lw $t4,12($sp)
+lw $ra,16($sp)
+addi $sp,$sp,20 #allocate for n,firstIndex,lastIndex,ra
+jr $ra
+ 
+ returnString:
+ move $v0,$s0
+ jr $ra
+ 
+swapLeftRight:
+subi $sp,$sp,8
+sw $a1,0($sp) #a1=firstIndex
+sw $a2,4($sp) #a2=lastIndex
+
+add $t0,$a1,$a2
+srl $t0,$t0,1 #to=(a1+a2)/2
+addi $t0,$t0,1 #the starting index of second half
+move $t5,$t0 #the final point 
+ 
+loop: # i=firstIndex j=mid+1 starting point
+add $t1,$s0,$a1 #t1=&input[i]
+add $t2,$s0,$t0 #t2=&input[j]
+lb $t3,0($t1) #t3=input[i]
+lb $t4,0($t2) #t4=input[j]
+beq $a1,$t5,exitLoop
+sb $t3 0($t2) #input[j]=$t3
+sb $t4 0($t1) #input[i]=$t2
+addi $a1,$a1,1 #i++
+addi $t0,$t0,1 #j++
+j loop
+
+exitLoop:
+#restore the parameters
+lw $a1,0($sp) #a1=firstIndex
+lw $a2,4($sp) #a2=lastIndex
+addi $sp,$sp,8
+jr $ra #return
